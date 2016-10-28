@@ -4,9 +4,11 @@
 
 use app_units::{Au, AU_PER_PX};
 use dom::attr::Attr;
+use dom::activation::Activatable;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding::HTMLImageElementMethods;
+use dom::bindings::codegen::Bindings::MouseEventBinding::MouseEventMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::inheritance::Castable;
@@ -15,17 +17,23 @@ use dom::bindings::refcounted::Trusted;
 use dom::bindings::str::DOMString;
 use dom::document::Document;
 use dom::element::{AttributeMutation, Element, RawLayoutElementHelpers};
+use dom::event::Event;
 use dom::eventtarget::EventTarget;
 use dom::globalscope::GlobalScope;
+use dom::htmlareaelement::HTMLAreaElement;
 use dom::htmlelement::HTMLElement;
+use dom::htmlmapelement::HTMLMapElement;
+use dom::mouseevent::MouseEvent;
 use dom::node::{Node, NodeDamage, document_from_node, window_from_node};
 use dom::values::UNSIGNED_LONG_MAX;
 use dom::virtualmethods::VirtualMethods;
+use euclid::point::Point2D;
 use html5ever_atoms::LocalName;
 use ipc_channel::ipc;
 use ipc_channel::router::ROUTER;
 use net_traits::image::base::{Image, ImageMetadata};
 use net_traits::image_cache_thread::{ImageResponder, ImageResponse};
+use num_traits::ToPrimitive;
 use script_runtime::CommonScriptMsg;
 use script_runtime::ScriptThreadEventCategory::UpdateReplacedElement;
 use script_thread::Runnable;
@@ -238,6 +246,22 @@ impl HTMLImageElement {
 
         Ok(image)
     }
+
+    pub fn areas(&self) -> Vec<Root<HTMLAreaElement>> {
+    let usemap = self.upcast::<Element>().get_string_attribute(&local_name!("usemap")); 
+    // TODO: Parse usemap attribute here
+    let map = self.upcast::<Node>()
+                        .children()
+                        .filter_map(Root::downcast::<HTMLMapElement>)
+                        .find(|n| n.upcast::<Element>().get_string_attribute(&LocalName::from("name")) == usemap);
+                       
+    let elements: Vec<Root<HTMLAreaElement>> = map.unwrap().upcast::<Node>()
+.children()
+                        .filter_map(Root::downcast::<HTMLAreaElement>)
+                        .collect();
+    // TODO: Process elements 
+    elements
+    }
 }
 
 pub trait LayoutHTMLImageElementHelpers {
@@ -432,6 +456,27 @@ impl VirtualMethods for HTMLImageElement {
             &local_name!("hspace") | &local_name!("vspace") => AttrValue::from_u32(value.into(), 0),
             _ => self.super_type().unwrap().parse_plain_attribute(name, value),
         }
+    }
+
+    fn handle_event(&self, event: &Event) {
+          let node = self.upcast::<Node>();
+       if (event.type_() == atom!("click")) {
+           let area_elements = self.areas();
+           // Fetch click coordinates
+           let mouse_event = event.downcast::<MouseEvent>().unwrap();
+           let point = Point2D::new(mouse_event.ClientX().to_f32().unwrap(), mouse_event.ClientY().to_f32().unwrap());
+           // Walk HTMLAreaElements
+           let index = 0;
+           while index < area_elements.len() {
+               let shape = area_elements[index].get_shape_from_coords(); 
+               let p = Point2D::new(node.client_rect().origin.x as f32, node.client_rect().origin.y as f32);
+               let shp = shape.unwrap().absolute_coords(p); 
+               if shp.unwrap().hit_test(point) {
+                   area_elements[index].activation_behavior(event, self.upcast());
+                   return
+               }
+           }
+       }
     }
 }
 

@@ -215,9 +215,9 @@ impl HTMLAreaElement {
        let shape = elem.get_string_attribute(&LocalName::from("shape"));
 
        match shape.as_ref() {
-           "Circle" => shp = Shape::Circle,
-           "Rectangle" => shp = Shape::Rectangle,
-           "Polygon" => shp = Shape::Polygon,
+           "circ" => shp = Shape::Circle,
+           "rect" => shp = Shape::Rectangle,
+           "poly" => shp = Shape::Polygon,
            _ => return None,
 }
         if elem.has_attribute(&LocalName::from("coords")) {

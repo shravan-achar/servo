@@ -6,10 +6,13 @@ use app_units::{Au, AU_PER_PX};
 use dom::attr::Attr;
 use dom::activation::Activatable;
 use dom::bindings::cell::DOMRefCell;
+use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectBinding::DOMRectMethods;
+use dom::bindings::codegen::Bindings::ElementBinding::ElementBinding::ElementMethods;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding::HTMLImageElementMethods;
 use dom::bindings::codegen::Bindings::MouseEventBinding::MouseEventMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
+use dom::bindings::codegen::Bindings::NodeBinding::NodeBinding::NodeMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::{LayoutJS, Root};
@@ -251,12 +254,14 @@ impl HTMLImageElement {
     let usemap = self.upcast::<Element>().get_string_attribute(&local_name!("usemap")); 
     // TODO: Parse usemap attribute here
     let map = self.upcast::<Node>()
-                        .children()
-                        .filter_map(Root::downcast::<HTMLMapElement>)
-                        .find(|n| n.upcast::<Element>().get_string_attribute(&LocalName::from("name")) == usemap);
+                        .following_siblings()
+                        .find(|n| n.is::<HTMLMapElement>()); 
+                        // && n.downcast::<Element>().unwrap().get_string_attribute(&LocalName::from("name")) == usemap);
+                        //.filter_map(Root::downcast::<HTMLMapElement>)
+                        //.find(|n| n.upcast::<Element>().get_string_attribute(&LocalName::from("name")) == usemap);
                        
     let elements: Vec<Root<HTMLAreaElement>> = map.unwrap().upcast::<Node>()
-.children()
+                        .children()
                         .filter_map(Root::downcast::<HTMLAreaElement>)
                         .collect();
     // TODO: Process elements 
@@ -466,15 +471,16 @@ impl VirtualMethods for HTMLImageElement {
            let mouse_event = event.downcast::<MouseEvent>().unwrap();
            let point = Point2D::new(mouse_event.ClientX().to_f32().unwrap(), mouse_event.ClientY().to_f32().unwrap());
            // Walk HTMLAreaElements
-           let index = 0;
+           let mut index = 0;
            while index < area_elements.len() {
                let shape = area_elements[index].get_shape_from_coords(); 
-               let p = Point2D::new(node.client_rect().origin.x as f32, node.client_rect().origin.y as f32);
+               let p = Point2D::new(self.upcast::<Element>().GetBoundingClientRect().X() as f32, self.upcast::<Element>().GetBoundingClientRect().Y() as f32);
                let shp = shape.unwrap().absolute_coords(p); 
                if shp.unwrap().hit_test(point) {
                    area_elements[index].activation_behavior(event, self.upcast());
                    return
                }
+               index += 1;
            }
        }
     }

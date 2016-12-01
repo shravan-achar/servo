@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use app_units::{Au, AU_PER_PX};
-use dom::attr::Attr;
 use dom::activation::Activatable;
+use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectBinding::DOMRectMethods;
 use dom::bindings::codegen::Bindings::ElementBinding::ElementBinding::ElementMethods;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding;
 use dom::bindings::codegen::Bindings::HTMLImageElementBinding::HTMLImageElementMethods;
 use dom::bindings::codegen::Bindings::MouseEventBinding::MouseEventMethods;
-use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeBinding::NodeMethods;
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::{LayoutJS, Root};
@@ -251,20 +251,21 @@ impl HTMLImageElement {
     }
 
     pub fn areas(&self) -> Vec<Root<HTMLAreaElement>> {
-    let usemap = self.upcast::<Element>().get_string_attribute(&local_name!("usemap")); 
+    let usemap = self.upcast::<Element>().get_string_attribute(&local_name!("usemap"));
     // TODO: Parse usemap attribute here
     let map = self.upcast::<Node>()
                         .following_siblings()
-                        .find(|n| n.is::<HTMLMapElement>()); 
-                        // && n.downcast::<Element>().unwrap().get_string_attribute(&LocalName::from("name")) == usemap);
+                        .find(|n| n.is::<HTMLMapElement>());
+                        // && n.downcast::<Element>().unwrap().get_string_attribute(&LocalName::from("name"))
+                         == usemap);
                         //.filter_map(Root::downcast::<HTMLMapElement>)
                         //.find(|n| n.upcast::<Element>().get_string_attribute(&LocalName::from("name")) == usemap);
-                       
+
     let elements: Vec<Root<HTMLAreaElement>> = map.unwrap().upcast::<Node>()
                         .children()
                         .filter_map(Root::downcast::<HTMLAreaElement>)
                         .collect();
-    // TODO: Process elements 
+    // TODO: Process elements
     elements
     }
 }
@@ -473,9 +474,10 @@ impl VirtualMethods for HTMLImageElement {
            // Walk HTMLAreaElements
            let mut index = 0;
            while index < area_elements.len() {
-               let shape = area_elements[index].get_shape_from_coords(); 
-               let p = Point2D::new(self.upcast::<Element>().GetBoundingClientRect().X() as f32, self.upcast::<Element>().GetBoundingClientRect().Y() as f32);
-               let shp = shape.unwrap().absolute_coords(p); 
+               let shape = area_elements[index].get_shape_from_coords();
+               let p = Point2D::new(self.upcast::<Element>().GetBoundingClientRect().X() as f32,
+               self.upcast::<Element>().GetBoundingClientRect().Y() as f32);
+               let shp = shape.unwrap().absolute_coords(p);
                if shp.unwrap().hit_test(point) {
                    area_elements[index].activation_behavior(event, self.upcast());
                    return

@@ -180,10 +180,11 @@ impl Area {
     pub fn absolute_coords(&self, p: Point2D<f32>) -> Option<Area> {
     match *self {
         Area::Rectangle { top_left, bottom_right } =>
-             Some(Area::Rectangle { top_left: (top_left.0 + p.x, top_left.1 + p.y), bottom_right: (bottom_right.0 + p.x, bottom_right.1 + p.y)}),
+             Some(Area::Rectangle { top_left: (top_left.0 + p.x, top_left.1 + p.y),
+             bottom_right: (bottom_right.0 + p.x, bottom_right.1 + p.y) }),
         _ => None,
     }
-    } 
+    }
 }
 
 #[dom_struct]
@@ -255,7 +256,7 @@ impl Activatable for HTMLAreaElement {
     fn as_element(&self) -> &Element {
         self.upcast::<Element>()
     }
-    
+
     fn is_instance_activatable(&self) -> bool {
         self.as_element().has_attribute(&local_name!("href"))
     }
@@ -268,7 +269,7 @@ impl Activatable for HTMLAreaElement {
 
     fn implicit_submission(&self, _ctrl_key: bool, _shift_key: bool, _alt_key: bool, _meta_key: bool) {
     }
-    
+
     fn activation_behavior(&self, _event: &Event, _target: &EventTarget) {
         // Step 1
         let doc = document_from_node(self);
